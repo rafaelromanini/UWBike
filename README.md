@@ -108,16 +108,6 @@ UWBike é uma aplicação backend que permite o cadastro, atualização, consult
 
 ---
 
-## 🤝 **Contribuição**
-Sinta-se à vontade para abrir issues e enviar PRs. Toda ajuda é bem-vinda! 😊
-
----
-
-## 📜 **Licença**
-Esse projeto está sob a licença MIT.
-
----
-
 ### 🚀 **Próximos Passos:**
 - Adicionar testes unitários para as rotas.
 - Implementar paginação na listagem de motos.
