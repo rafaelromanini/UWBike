@@ -1,0 +1,6 @@
+@UWBike_HostAddress = http://localhost:5241
+
+GET {{UWBike_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
