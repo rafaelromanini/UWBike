@@ -9,6 +9,13 @@ UWBike é uma aplicação backend que permite o cadastro, atualização, consult
 
 ---
 
+## Integrantes:
+ - Vinicius Leandro de Araujo Bernardes RM554728 TURMA 2TDSPY
+ - Edvan Davi Murilo Santos do Nascimento RM554733 TURMA 2TDSPZ
+- Rafael Romanini de Oliveira RM554637 TURMA 2TDSPZ
+
+---
+
 ## 🚀 **Tecnologias Utilizadas**
 - **ASP.NET Core 7.0**
 - **Entity Framework Core**
