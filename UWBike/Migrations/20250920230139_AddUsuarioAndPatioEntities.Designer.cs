@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Oracle.EntityFrameworkCore.Metadata;
 using UWBike.Connection;
@@ -11,9 +12,11 @@ using UWBike.Connection;
 namespace UWBike.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250920230139_AddUsuarioAndPatioEntities")]
+    partial class AddUsuarioAndPatioEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -86,7 +89,7 @@ namespace UWBike.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_MOTO_PLACA");
 
-                    b.ToTable("t_moto", "RM554637");
+                    b.ToTable("TB_MOTO", "RM554637");
                 });
 
             modelBuilder.Entity("UWBike.Model.Patio", b =>
@@ -148,7 +151,7 @@ namespace UWBike.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("t_patio", "RM554637");
+                    b.ToTable("TB_PATIO", "RM554637");
                 });
 
             modelBuilder.Entity("UWBike.Model.Usuario", b =>
@@ -192,7 +195,7 @@ namespace UWBike.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_USUARIO_EMAIL");
 
-                    b.ToTable("t_usuario", "RM554637");
+                    b.ToTable("TB_USUARIO", "RM554637");
                 });
 
             modelBuilder.Entity("UWBike.Model.Moto", b =>
