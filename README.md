@@ -1,121 +1,281 @@
 # 🏍️ UWBike API  
 
-API RESTful desenvolvida para o gerenciamento de motos em um sistema de frota utilizando ASP.NET Core e Oracle Database.  
+API RESTful desenvolvida para o gerenciamento de motos, usuários e pátios utilizando ASP.NET Core com Oracle Database. Implementa boas práticas REST, paginação, HATEOAS e documentação Swagger completa.
 
 ---
 
-## 📌 **Descrição do Projeto**
-UWBike é uma aplicação backend que permite o cadastro, atualização, consulta e remoção de motos em um banco de dados Oracle. A aplicação foi desenvolvida em ASP.NET Core utilizando Entity Framework Core para integração com o banco de dados.
+# 👥 **Integrantes**
+- **Vinicius Leandro de Araujo Bernardes** - RM554728 - TURMA 2TDSPY
+- **Edvan Davi Murilo Santos do Nascimento** - RM554733 - TURMA 2TDSPZ  
+- **Rafael Romanini de Oliveira** - RM554637 - TURMA 2TDSPZ
 
 ---
 
-## Integrantes:
- - Vinicius Leandro de Araujo Bernardes RM554728 TURMA 2TDSPY
- - Edvan Davi Murilo Santos do Nascimento RM554733 TURMA 2TDSPZ
-- Rafael Romanini de Oliveira RM554637 TURMA 2TDSPZ
+## 🏗️ **Justificativa da Arquitetura**
+
+### **Domínio Escolhido: Sistema de Gerenciamento de Frota de Motos**
+A escolha do domínio de gerenciamento de frota de motos se justifica pela complexidade adequada para demonstrar relacionamentos entre entidades e regras de negócio específicas:
+
+#### **Entidades Principais:**
+1. **Usuário** - Representa os operadores do sistema
+2. **Pátio** - Locais físicos onde as motos ficam estacionadas
+3. **Moto** - Veículos da frota com relacionamento obrigatório com pátios
+
+#### **Arquitetura Técnica:**
+- **ASP.NET Core Web API** - Framework robusto com alta performance
+- **Entity Framework Core** - ORM maduro com suporte completo ao Oracle
+- **Oracle Database** - Banco empresarial com alta confiabilidade
+- **Padrão Repository implícito** via DbContext
+- **DTOs** para separação de responsabilidades
+- **Swagger/OpenAPI** para documentação automática
+
+#### **Justificativas das Escolhas:**
+- **Separação de responsabilidades** entre Controllers, Models e Data Access
+- **Paginação nativa** para performance em grandes volumes
+- **HATEOAS** para navegabilidade da API
+- **Validações robustas** com Data Annotations
+- **Tratamento de erros** padronizado com status codes apropriados
+
+### **Regra de Negócio Implementada:**
+Uma moto **SEMPRE** deve ter um pátio associado. Se uma moto já existir no sistema (mesma placa/chassi) mas não possuir pátio, ela será automaticamente alocada ao pátio especificado no novo cadastro.
+
+---
+
+## 🚀 **Instruções de Execução**
+
+### **Pré-requisitos:**
+- .NET 9.0 SDK
+- Oracle Database (ou acesso ao oracle.fiap.com.br)
+- Visual Studio Code ou Visual Studio
+
+### **1. Clone o Repositório:**
+```bash
+git clone https://github.com/rafaelromanini/UWBike.git
+cd UWBike
+```
+
+### **2. Configure a String de Conexão:**
+No arquivo `UWBike/appsettings.json`, configure:
+```json
+{
+  "ConnectionStrings": {
+    "OracleConnection": "User Id=RM554637;Password=SUA_SENHA;Data Source=oracle.fiap.com.br:1521/ORCL;"
+  }
+}
+```
+
+### **3. Instale as Dependências:**
+```bash
+cd UWBike
+dotnet restore
+```
+
+### **4. Execute as Migrations:**
+```bash
+dotnet ef database update
+```
+
+### **5. Compile e Execute:**
+```bash
+dotnet build
+dotnet run
+```
+
+### **6. Acesse a API:**
+- **Swagger UI:** http://localhost:5241
+- **API Base:** http://localhost:5241/api
+
+---
+## � **Exemplos de Uso dos Endpoints**
+
+### **Usuários (`/api/usuarios`)**
+
+#### **Criar Usuário:**
+```bash
+POST /api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "email": "joao.silva@email.com",
+  "senha": "senha123"
+}
+```
+
+#### **Listar Usuários com Paginação:**
+```bash
+GET /api/usuarios?pageNumber=1&pageSize=10&search=joão&sortBy=nome&sortDescending=false
+```
+
+#### **Buscar Usuário por Email:**
+```bash
+GET /api/usuarios/buscar?email=joao.silva@email.com
+```
+
+#### **Atualizar Usuário:**
+```bash
+PUT /api/usuarios/1
+Content-Type: application/json
+
+{
+  "nome": "João Silva Santos",
+  "email": "joao.santos@email.com"
+}
+```
+
+### **Pátios (`/api/patios`)**
+
+#### **Criar Pátio:**
+```bash
+POST /api/patios
+Content-Type: application/json
+
+{
+  "nome": "Pátio Central",
+  "endereco": "Rua das Flores, 123",
+  "capacidade": 100,
+  "cep": "01234-567",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "telefone": "11999999999"
+}
+```
+
+#### **Listar Motos de um Pátio:**
+```bash
+GET /api/patios/1/motos?pageNumber=1&pageSize=10
+```
+
+### **Motos (`/api/motos`)**
+
+#### **Criar Moto (Regra de Negócio):**
+```bash
+POST /api/motos
+Content-Type: application/json
+
+{
+  "modelo": "Honda CB 600F Hornet",
+  "placa": "ABC-1234",
+  "chassi": "9C2JB1310CR000001",
+  "patioId": 1,
+  "anoFabricacao": 2022,
+  "cor": "Vermelha"
+}
+```
+
+#### **Buscar Moto por Placa:**
+```bash
+GET /api/motos/buscar?placa=ABC-1234
+```
+
+#### **Listar Motos com Filtros:**
+```bash
+GET /api/motos?pageNumber=1&pageSize=5&search=Honda&sortBy=modelo&sortDescending=true
+```
+
+### **Exemplo de Resposta com HATEOAS:**
+```json
+{
+  "data": {
+    "id": 1,
+    "nome": "João Silva",
+    "email": "joao.silva@email.com",
+    "dataCriacao": "2025-09-21T10:30:00Z"
+  },
+  "success": true,
+  "message": "Usuário encontrado com sucesso",
+  "errors": [],
+  "links": [
+    {
+      "href": "/api/usuarios/1",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "/api/usuarios/1",
+      "rel": "update",
+      "method": "PUT"
+    },
+    {
+      "href": "/api/usuarios/1",
+      "rel": "delete",
+      "method": "DELETE"
+    },
+    {
+      "href": "/api/usuarios",
+      "rel": "list",
+      "method": "GET"
+    }
+  ]
+}
+```
+
+---
+
+## 🏗️ **Estrutura do Projeto**
+
+```
+UWBike/
+├── UWBike/                     # Projeto principal da API
+│   ├── Common/                 # Classes utilitárias (HATEOAS, Paginação)
+│   ├── Connection/             # Contexto do Entity Framework
+│   ├── Controllers/            # Controllers da API REST
+│   ├── Data/Mappings/          # Configurações EF Core
+│   ├── Migrations/             # Migrations do banco
+│   ├── Model/                  # Entidades do domínio
+│   ├── Properties/             # Configurações do projeto
+│   ├── appsettings.json        # Configurações da aplicação
+│   └── Program.cs              # Ponto de entrada da aplicação
+├── UWBike.Tests/              # Projeto de testes (para implementação)
+└── README.md                  # Documentação do projeto
+```
+
+---
+
+## 🔗 **Endpoints da API**
+
+### **Usuários:**
+| Método | Endpoint | Descrição |
+|---------|----------|-----------|
+| `GET` | `/api/usuarios` | Lista usuários com paginação |
+| `GET` | `/api/usuarios/{id}` | Busca usuário por ID |
+| `GET` | `/api/usuarios/buscar?email=` | Busca por email |
+| `POST` | `/api/usuarios` | Cria novo usuário |
+| `PUT` | `/api/usuarios/{id}` | Atualiza usuário |
+| `DELETE` | `/api/usuarios/{id}` | Remove usuário |
+
+### **Pátios:**
+| Método | Endpoint | Descrição |
+|---------|----------|-----------|
+| `GET` | `/api/patios` | Lista pátios com paginação |
+| `GET` | `/api/patios/{id}` | Busca pátio por ID |
+| `GET` | `/api/patios/{id}/motos` | Lista motos do pátio |
+| `POST` | `/api/patios` | Cria novo pátio |
+| `PUT` | `/api/patios/{id}` | Atualiza pátio |
+| `DELETE` | `/api/patios/{id}` | Remove pátio |
+
+### **Motos:**
+| Método | Endpoint | Descrição |
+|---------|----------|-----------|
+| `GET` | `/api/motos` | Lista motos com paginação |
+| `GET` | `/api/motos/{id}` | Busca moto por ID |
+| `GET` | `/api/motos/buscar?placa=` | Busca por placa |
+| `POST` | `/api/motos` | Cria nova moto (com regra de negócio) |
+| `PUT` | `/api/motos/{id}` | Atualiza moto |
+| `DELETE` | `/api/motos/{id}` | Remove moto |
 
 ---
 
 ## 🚀 **Tecnologias Utilizadas**
-- **ASP.NET Core 7.0**
-- **Entity Framework Core**
-- **Oracle Database**
-- **Swagger UI**
-- **Oracle SQL Developer**
-
----
-## 📂 **Estrutura de Pastas**
-- **Connection/** → Contém a configuração do banco de dados e o contexto do Entity Framework Core.
-  - `AppDbContext.cs` → Classe responsável pela conexão e configuração do EF Core.
-
-- **Controllers/** → Controladores da aplicação, responsáveis por definir as rotas da API.
-  - `MotoController.cs` → Controller principal para CRUD das motos.
-
-- **Data/Mappings/** → Configurações de mapeamento das entidades para o banco de dados.
-  - `MotoMapping.cs` → Mapeamento da entidade `Moto` para a tabela no Oracle.
-
-- **Migrations/** → Arquivos de migração gerados pelo Entity Framework para criar e atualizar o banco.
-  - `20250520010129_MotoMappingMigration.cs` → Migração que cria a tabela de motos.
-  - `AppDbContextModelSnapshot.cs` → Representação atual do banco para controle de mudanças.
-
-- **Model/** → Modelos das entidades do sistema.
-  - `Moto.cs` → Classe que representa a entidade `Moto` no banco.
-
-- **Properties/** → Configurações de ambiente da aplicação.
-  - `launchSettings.json` → Define portas e ambiente de execução.
-
-- **Raiz do Projeto**
-  - `appsettings.json` → Configurações da string de conexão com o banco de dados Oracle.
-  - `Program.cs` → Arquivo principal para configuração dos serviços e execução do servidor.
-  - `UWBike.http` → Arquivo para testes HTTP das rotas.
-  - `README.md` → Documentação do projeto.
-
+- **ASP.NET Core 9.0** - Framework web moderno e performático
+- **Entity Framework Core** - ORM com suporte nativo ao Oracle
+- **Oracle Database** - Banco de dados empresarial robusto
+- **Swagger/OpenAPI** - Documentação automática e interativa
+- **HATEOAS** - Hypermedia as the Engine of Application State
+- **Data Annotations** - Validações de modelo integradas
 
 ---
 
-## 🔗 **Rotas da API**
-| Método | Rota             | Descrição                             |
-|---------|------------------|---------------------------------------|
-| `GET`   | `/motos`        | Lista todas as motos cadastradas      |
-| `GET`   | `/motos/{id}`   | Consulta uma moto pelo ID             |
-| `GET`   | `/motos/buscar` | Busca uma moto pela placa             |
-| `POST`  | `/motos`        | Adiciona uma nova moto                |
-| `PUT`   | `/motos/{id}`   | Atualiza os dados de uma moto         |
-| `DELETE`| `/motos/{id}`   | Remove uma moto do banco de dados     |
-
----
-
-## ⚙️ **Configuração do Banco de Dados**
-1. No arquivo `appsettings.json`, configure a string de conexão para o Oracle:
-    ```json
-    "ConnectionStrings": {
-        "OracleConnection": "User Id= ;Password= ;Data Source=oracle.fiap.com.br:1521/ORCL;"
-    }
-    ```
-
-2. Realize as migrations:
-    ```bash
-    dotnet ef migrations add InitialMigration
-    dotnet ef database update
-    ```
-
----
-
-## 💻 **Instalação e Execução**
-1. Clone o repositório:
-    ```bash
-    git clone https://github.com/rafaelromanini/UWBike.git
-    ```
-
-2. Entre no diretório do projeto:
-    ```bash
-    cd UWBike
-    ```
-
-3. Restaure as dependências:
-    ```bash
-    dotnet restore
-    ```
-
-4. Compile o projeto:
-    ```bash
-    dotnet build
-    ```
-
-5. Execute o projeto:
-    ```bash
-    dotnet run
-    ```
-
----
-
-## 🔎 **Testes no Swagger**
-- Acesse no navegador: [http://localhost:5241/swagger](http://localhost:5241/swagger)  
-- Teste todas as rotas diretamente pela interface gráfica.
-
----
-
-### 🚀 **Próximos Passos:**
-- Adicionar testes unitários para as rotas.
-- Implementar paginação na listagem de motos.
-- Criar integração com um serviço de terceiros para validação de chassis.
+## � **Documentação Adicional**
+- **Swagger UI:** Acesse http://localhost:5241 quando a aplicação estiver rodando
+- **Oracle SQL Developer:** Para visualização e manutenção do banco
