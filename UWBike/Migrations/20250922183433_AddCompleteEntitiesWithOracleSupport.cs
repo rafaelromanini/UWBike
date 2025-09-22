@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,11 +6,20 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace UWBike.Migrations
 {
     /// <inheritdoc />
-    public partial class AddUsuarioAndPatioEntities : Migration
+    public partial class AddCompleteEntitiesWithOracleSupport : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "RM554637");
+
+            migrationBuilder.RenameTable(
+                name: "TB_MOTO",
+                schema: "RM554694",
+                newName: "TB_MOTO",
+                newSchema: "RM554637");
+
             migrationBuilder.AddColumn<int>(
                 name: "ANO_FABRICACAO",
                 schema: "RM554637",
@@ -18,13 +27,13 @@ namespace UWBike.Migrations
                 type: "NUMBER(10)",
                 nullable: true);
 
-            migrationBuilder.AddColumn<bool>(
+            migrationBuilder.AddColumn<int>(
                 name: "ATIVO",
                 schema: "RM554637",
                 table: "TB_MOTO",
-                type: "BOOLEAN",
+                type: "NUMBER(10)",
                 nullable: false,
-                defaultValue: false);
+                defaultValue: 0);
 
             migrationBuilder.AddColumn<string>(
                 name: "COR",
@@ -71,7 +80,7 @@ namespace UWBike.Migrations
                     ESTADO = table.Column<string>(type: "NVARCHAR2(2)", maxLength: 2, nullable: true),
                     TELEFONE = table.Column<string>(type: "NVARCHAR2(15)", maxLength: 15, nullable: true),
                     CAPACIDADE = table.Column<int>(type: "NUMBER(10)", nullable: false),
-                    ATIVO = table.Column<bool>(type: "BOOLEAN", nullable: false),
+                    ATIVO = table.Column<int>(type: "NUMBER(10)", nullable: false),
                     DATA_CRIACAO = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
                     DATA_ATUALIZACAO = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: true)
                 },
@@ -196,6 +205,15 @@ namespace UWBike.Migrations
                 name: "ID_PATIO",
                 schema: "RM554637",
                 table: "TB_MOTO");
+
+            migrationBuilder.EnsureSchema(
+                name: "RM554694");
+
+            migrationBuilder.RenameTable(
+                name: "TB_MOTO",
+                schema: "RM554637",
+                newName: "TB_MOTO",
+                newSchema: "RM554694");
         }
     }
 }

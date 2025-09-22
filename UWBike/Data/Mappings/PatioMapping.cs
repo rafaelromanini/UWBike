@@ -45,9 +45,10 @@ namespace UWBike.Data.Mappings
                 .IsRequired()
                 .HasColumnName("CAPACIDADE");
 
-            builder.Property(p => p.Ativo)
+            builder.Property(m => m.Ativo)
                 .IsRequired()
-                .HasColumnName("ATIVO");
+                .HasColumnName("ATIVO")
+                .HasConversion<int>();
 
             builder.Property(p => p.DataCriacao)
                 .IsRequired()

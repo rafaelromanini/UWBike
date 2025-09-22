@@ -35,8 +35,8 @@ namespace UWBike.Migrations
                         .HasColumnType("NUMBER(10)")
                         .HasColumnName("ANO_FABRICACAO");
 
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("BOOLEAN")
+                    b.Property<int>("Ativo")
+                        .HasColumnType("NUMBER(10)")
                         .HasColumnName("ATIVO");
 
                     b.Property<string>("Chassi")
@@ -86,7 +86,7 @@ namespace UWBike.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_MOTO_PLACA");
 
-                    b.ToTable("t_moto", "RM554637");
+                    b.ToTable("TB_MOTO", "RM554637");
                 });
 
             modelBuilder.Entity("UWBike.Model.Patio", b =>
@@ -98,8 +98,8 @@ namespace UWBike.Migrations
 
                     OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Ativo")
-                        .HasColumnType("BOOLEAN")
+                    b.Property<int>("Ativo")
+                        .HasColumnType("NUMBER(10)")
                         .HasColumnName("ATIVO");
 
                     b.Property<int>("Capacidade")
@@ -148,7 +148,7 @@ namespace UWBike.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("t_patio", "RM554637");
+                    b.ToTable("TB_PATIO", "RM554637");
                 });
 
             modelBuilder.Entity("UWBike.Model.Usuario", b =>
@@ -192,7 +192,7 @@ namespace UWBike.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_USUARIO_EMAIL");
 
-                    b.ToTable("t_usuario", "RM554637");
+                    b.ToTable("TB_USUARIO", "RM554637");
                 });
 
             modelBuilder.Entity("UWBike.Model.Moto", b =>
