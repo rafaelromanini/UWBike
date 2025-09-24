@@ -4,6 +4,7 @@ using UWBike.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using DTOs;
 
 namespace UWBike.Controllers
 {
@@ -25,10 +26,10 @@ namespace UWBike.Controllers
         /// <param name="parameters">Parâmetros de paginação</param>
         /// <returns>Lista paginada de motos</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(PagedResult<Moto>), 200)]
+        [ProducesResponseType(typeof(PagedResult<MotoDto>), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
-        public async Task<ActionResult<PagedResult<Moto>>> GetAll([FromQuery] PaginationParameters parameters)
+        public async Task<ActionResult<PagedResult<MotoDto>>> GetAll([FromQuery] PaginationParameters parameters)
         {
             try
             {
@@ -84,7 +85,7 @@ namespace UWBike.Controllers
                     .Take(parameters.PageSize)
                     .ToListAsync();
 
-                var pagedResult = new PagedResult<Moto>(motos, parameters.PageNumber, parameters.PageSize, totalRecords);
+                var pagedResult = new PagedResult<MotoDto>([.. motos.Select(MotoDto.fromMoto)], parameters.PageNumber, parameters.PageSize, totalRecords);
                 
                 // Adicionar links HATEOAS para paginação
                 HateoasHelper.AddPaginationLinks(
@@ -113,17 +114,17 @@ namespace UWBike.Controllers
         /// <param name="id">ID da moto</param>
         /// <returns>Dados da moto</returns>
         [HttpGet("{id:int}")]
-        [ProducesResponseType(typeof(ApiResponse<Moto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<MotoDto>), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
-        public async Task<ActionResult<ApiResponse<Moto>>> GetById(int id)
+        public async Task<ActionResult<ApiResponse<MotoDto>>> GetById(int id)
         {
             try
             {
                 if (id <= 0)
                 {
-                    return BadRequest(ApiResponse<Moto>.ErrorResponse("ID deve ser maior que zero"));
+                    return BadRequest(ApiResponse<MotoDto>.ErrorResponse("ID deve ser maior que zero"));
                 }
 
                 var moto = await _context.Motos
@@ -132,17 +133,17 @@ namespace UWBike.Controllers
                 
                 if (moto == null)
                 {
-                    return NotFound(ApiResponse<Moto>.ErrorResponse("Moto não encontrada"));
+                    return NotFound(ApiResponse<MotoDto>.ErrorResponse("Moto não encontrada"));
                 }
 
-                var response = ApiResponse<Moto>.SuccessResponse(moto, "Moto encontrada com sucesso");
+                var response = ApiResponse<MotoDto>.SuccessResponse(MotoDto.fromMoto(moto), "Moto encontrada com sucesso");
                 HateoasHelper.AddHateoasLinks(response, "Motos", id, Url);
 
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<Moto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
+                return StatusCode(500, ApiResponse<MotoDto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
             }
         }
 
@@ -152,17 +153,17 @@ namespace UWBike.Controllers
         /// <param name="placa">Placa da moto</param>
         /// <returns>Dados da moto</returns>
         [HttpGet("buscar")]
-        [ProducesResponseType(typeof(ApiResponse<Moto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<MotoDto>), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
         [ProducesResponseType(500)]
-        public async Task<ActionResult<ApiResponse<Moto>>> GetByPlaca([FromQuery] string placa)
+        public async Task<ActionResult<ApiResponse<MotoDto>>> GetByPlaca([FromQuery] string placa)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(placa))
                 {
-                    return BadRequest(ApiResponse<Moto>.ErrorResponse("Placa é obrigatória"));
+                    return BadRequest(ApiResponse<MotoDto>.ErrorResponse("Placa é obrigatória"));
                 }
 
                 var moto = await _context.Motos
@@ -171,17 +172,17 @@ namespace UWBike.Controllers
                 
                 if (moto == null)
                 {
-                    return NotFound(ApiResponse<Moto>.ErrorResponse("Moto não encontrada"));
+                    return NotFound(ApiResponse<MotoDto>.ErrorResponse("Moto não encontrada"));
                 }
 
-                var response = ApiResponse<Moto>.SuccessResponse(moto, "Moto encontrada com sucesso");
+                var response = ApiResponse<MotoDto>.SuccessResponse(MotoDto.fromMoto(moto), "Moto encontrada com sucesso");
                 HateoasHelper.AddHateoasLinks(response, "Motos", moto.Id, Url);
 
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<Moto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
+                return StatusCode(500, ApiResponse<MotoDto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
             }
         }
 
@@ -193,26 +194,26 @@ namespace UWBike.Controllers
         /// <param name="motoDto">Dados da moto a ser criada</param>
         /// <returns>Moto criada ou atualizada</returns>
         [HttpPost]
-        [ProducesResponseType(typeof(ApiResponse<Moto>), 201)]
-        [ProducesResponseType(typeof(ApiResponse<Moto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<MotoDto>), 201)]
+        [ProducesResponseType(typeof(ApiResponse<MotoDto>), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(500)]
-        public async Task<ActionResult<ApiResponse<Moto>>> Create([FromBody] CreateMotoDto motoDto)
+        public async Task<ActionResult<ApiResponse<MotoDto>>> Create([FromBody] CreateMotoDto motoDto)
         {
             try
             {
                 if (!ModelState.IsValid)
                 {
                     var errors = ModelState.SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage)).ToList();
-                    return BadRequest(ApiResponse<Moto>.ErrorResponse("Dados inválidos", errors));
+                    return BadRequest(ApiResponse<MotoDto>.ErrorResponse("Dados inválidos", errors));
                 }
 
                 // Verificar se o pátio existe
                 var patio = await _context.Patios.FindAsync(motoDto.PatioId);
                 if (patio == null)
                 {
-                    return NotFound(ApiResponse<Moto>.ErrorResponse("Pátio especificado não encontrado"));
+                    return NotFound(ApiResponse<MotoDto>.ErrorResponse("Pátio especificado não encontrado"));
                 }
 
                 // REGRA DE NEGÓCIO: Verificar se já existe moto com a mesma placa ou chassi
@@ -228,7 +229,7 @@ namespace UWBike.Controllers
                     // Se a moto já tem um pátio, não pode cadastrar novamente
                     if (motoExistentePlaca.PatioId > 0)
                     {
-                        return Conflict(ApiResponse<Moto>.ErrorResponse($"Já existe uma moto com a placa {motoDto.Placa} alocada no pátio {motoExistentePlaca.Patio?.Nome}"));
+                        return Conflict(ApiResponse<MotoDto>.ErrorResponse($"Já existe uma moto com a placa {motoDto.Placa} alocada no pátio {motoExistentePlaca.Patio?.Nome}"));
                     }
                     
                     // Se não tem pátio (PatioId = 0), aloca ao pátio especificado
@@ -240,7 +241,7 @@ namespace UWBike.Controllers
                     // Recarregar com o pátio
                     await _context.Entry(motoExistentePlaca).Reference(m => m.Patio).LoadAsync();
                     
-                    var responseUpdate = ApiResponse<Moto>.SuccessResponse(motoExistentePlaca, "Moto existente alocada ao pátio com sucesso");
+                    var responseUpdate = ApiResponse<MotoDto>.SuccessResponse(MotoDto.fromMoto(motoExistentePlaca), "Moto existente alocada ao pátio com sucesso");
                     HateoasHelper.AddHateoasLinks(responseUpdate, "Motos", motoExistentePlaca.Id, Url);
                     
                     return Ok(responseUpdate);
@@ -251,7 +252,7 @@ namespace UWBike.Controllers
                 {
                     if (motoExistenteChassi.PatioId > 0)
                     {
-                        return Conflict(ApiResponse<Moto>.ErrorResponse($"Já existe uma moto com o chassi {motoDto.Chassi} alocada no pátio {motoExistenteChassi.Patio?.Nome}"));
+                        return Conflict(ApiResponse<MotoDto>.ErrorResponse($"Já existe uma moto com o chassi {motoDto.Chassi} alocada no pátio {motoExistenteChassi.Patio?.Nome}"));
                     }
                     
                     motoExistenteChassi.PatioId = motoDto.PatioId;
@@ -261,7 +262,7 @@ namespace UWBike.Controllers
                     
                     await _context.Entry(motoExistenteChassi).Reference(m => m.Patio).LoadAsync();
                     
-                    var responseUpdate = ApiResponse<Moto>.SuccessResponse(motoExistenteChassi, "Moto existente alocada ao pátio com sucesso");
+                    var responseUpdate = ApiResponse<MotoDto>.SuccessResponse(MotoDto.fromMoto(motoExistenteChassi), "Moto existente alocada ao pátio com sucesso");
                     HateoasHelper.AddHateoasLinks(responseUpdate, "Motos", motoExistenteChassi.Id, Url);
                     
                     return Ok(responseUpdate);
@@ -280,14 +281,14 @@ namespace UWBike.Controllers
                 // Carregar o pátio
                 await _context.Entry(moto).Reference(m => m.Patio).LoadAsync();
 
-                var response = ApiResponse<Moto>.SuccessResponse(moto, "Moto criada com sucesso");
+                var response = ApiResponse<MotoDto>.SuccessResponse(MotoDto.fromMoto(moto), "Moto criada com sucesso");
                 HateoasHelper.AddHateoasLinks(response, "Motos", moto.Id, Url);
 
                 return CreatedAtAction(nameof(GetById), new { id = moto.Id }, response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<Moto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
+                return StatusCode(500, ApiResponse<MotoDto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
             }
         }
 
@@ -298,30 +299,30 @@ namespace UWBike.Controllers
         /// <param name="motoDto">Dados atualizados da moto</param>
         /// <returns>Moto atualizada</returns>
         [HttpPut("{id:int}")]
-        [ProducesResponseType(typeof(ApiResponse<Moto>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<MotoDto>), 200)]
         [ProducesResponseType(400)]
         [ProducesResponseType(404)]
         [ProducesResponseType(409)]
         [ProducesResponseType(500)]
-        public async Task<ActionResult<ApiResponse<Moto>>> Update(int id, [FromBody] UpdateMotoDto motoDto)
+        public async Task<ActionResult<ApiResponse<MotoDto>>> Update(int id, [FromBody] UpdateMotoDto motoDto)
         {
             try
             {
                 if (id <= 0)
                 {
-                    return BadRequest(ApiResponse<Moto>.ErrorResponse("ID deve ser maior que zero"));
+                    return BadRequest(ApiResponse<MotoDto>.ErrorResponse("ID deve ser maior que zero"));
                 }
 
                 if (!ModelState.IsValid)
                 {
                     var errors = ModelState.SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage)).ToList();
-                    return BadRequest(ApiResponse<Moto>.ErrorResponse("Dados inválidos", errors));
+                    return BadRequest(ApiResponse<MotoDto>.ErrorResponse("Dados inválidos", errors));
                 }
 
                 var moto = await _context.Motos.Include(m => m.Patio).FirstOrDefaultAsync(m => m.Id == id);
                 if (moto == null)
                 {
-                    return NotFound(ApiResponse<Moto>.ErrorResponse("Moto não encontrada"));
+                    return NotFound(ApiResponse<MotoDto>.ErrorResponse("Moto não encontrada"));
                 }
 
                 // Verificar se o novo pátio existe (se fornecido)
@@ -330,7 +331,7 @@ namespace UWBike.Controllers
                     var patio = await _context.Patios.FindAsync(motoDto.PatioId.Value);
                     if (patio == null)
                     {
-                        return NotFound(ApiResponse<Moto>.ErrorResponse("Pátio especificado não encontrado"));
+                        return NotFound(ApiResponse<MotoDto>.ErrorResponse("Pátio especificado não encontrado"));
                     }
                 }
 
@@ -343,7 +344,7 @@ namespace UWBike.Controllers
                     
                     if (existingMoto != null)
                     {
-                        return Conflict(ApiResponse<Moto>.ErrorResponse("Já existe outra moto com esta placa"));
+                        return Conflict(ApiResponse<MotoDto>.ErrorResponse("Já existe outra moto com esta placa"));
                     }
                 }
 
@@ -356,7 +357,7 @@ namespace UWBike.Controllers
                     
                     if (existingMoto != null)
                     {
-                        return Conflict(ApiResponse<Moto>.ErrorResponse("Já existe outra moto com este chassi"));
+                        return Conflict(ApiResponse<MotoDto>.ErrorResponse("Já existe outra moto com este chassi"));
                     }
                 }
 
@@ -389,14 +390,14 @@ namespace UWBike.Controllers
                 // Recarregar com o pátio atualizado
                 await _context.Entry(moto).Reference(m => m.Patio).LoadAsync();
 
-                var response = ApiResponse<Moto>.SuccessResponse(moto, "Moto atualizada com sucesso");
+                var response = ApiResponse<MotoDto>.SuccessResponse(MotoDto.fromMoto(moto), "Moto atualizada com sucesso");
                 HateoasHelper.AddHateoasLinks(response, "Motos", moto.Id, Url);
 
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<Moto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
+                return StatusCode(500, ApiResponse<MotoDto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
             }
         }
 
@@ -438,52 +439,5 @@ namespace UWBike.Controllers
                 return StatusCode(500, ApiResponse<object>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
             }
         }
-    }
-
-    // DTOs para as operações
-    public class CreateMotoDto
-    {
-        [Required(ErrorMessage = "Modelo é obrigatório")]
-        [StringLength(100, ErrorMessage = "Modelo deve ter no máximo 100 caracteres")]
-        public string Modelo { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Placa é obrigatória")]
-        [StringLength(10, ErrorMessage = "Placa deve ter no máximo 10 caracteres")]
-        public string Placa { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Chassi é obrigatório")]
-        [StringLength(20, ErrorMessage = "Chassi deve ter no máximo 20 caracteres")]
-        public string Chassi { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Pátio é obrigatório")]
-        public int PatioId { get; set; }
-
-        [Range(1900, 2100, ErrorMessage = "Ano de fabricação deve estar entre 1900 e 2100")]
-        public int? AnoFabricacao { get; set; }
-
-        [StringLength(50, ErrorMessage = "Cor deve ter no máximo 50 caracteres")]
-        public string? Cor { get; set; }
-    }
-
-    public class UpdateMotoDto
-    {
-        [StringLength(100, ErrorMessage = "Modelo deve ter no máximo 100 caracteres")]
-        public string? Modelo { get; set; }
-
-        [StringLength(10, ErrorMessage = "Placa deve ter no máximo 10 caracteres")]
-        public string? Placa { get; set; }
-
-        [StringLength(20, ErrorMessage = "Chassi deve ter no máximo 20 caracteres")]
-        public string? Chassi { get; set; }
-
-        public int? PatioId { get; set; }
-
-        [Range(1900, 2100, ErrorMessage = "Ano de fabricação deve estar entre 1900 e 2100")]
-        public int? AnoFabricacao { get; set; }
-
-        [StringLength(50, ErrorMessage = "Cor deve ter no máximo 50 caracteres")]
-        public string? Cor { get; set; }
-
-        public bool? Ativo { get; set; }
     }
 }

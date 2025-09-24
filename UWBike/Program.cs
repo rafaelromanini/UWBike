@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using UWBike.Connection;
+using DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +77,7 @@ app.Run();
 // Schema Filter para adicionar exemplos
 public class ExampleSchemaFilter : Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilter
 {
-    public void Apply(Microsoft.OpenApi.Models.OpenApiSchema schema, Swashbuckle.AspNetCore.SwaggerGen.SchemaFilterContext context)
+    public void Apply(OpenApiSchema schema, Swashbuckle.AspNetCore.SwaggerGen.SchemaFilterContext context)
     {
         if (context.Type == typeof(UWBike.Controllers.CreateUsuarioDto))
         {
@@ -87,7 +88,7 @@ public class ExampleSchemaFilter : Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilt
                 ["senha"] = new Microsoft.OpenApi.Any.OpenApiString("senha123")
             };
         }
-        else if (context.Type == typeof(UWBike.Controllers.CreatePatioDto))
+        else if (context.Type == typeof(DTOs.CreatePatioDto))
         {
             schema.Example = new Microsoft.OpenApi.Any.OpenApiObject
             {
@@ -100,7 +101,7 @@ public class ExampleSchemaFilter : Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilt
                 ["telefone"] = new Microsoft.OpenApi.Any.OpenApiString("11999999999")
             };
         }
-        else if (context.Type == typeof(UWBike.Controllers.CreateMotoDto))
+        else if (context.Type == typeof(DTOs.CreateMotoDto))
         {
             schema.Example = new Microsoft.OpenApi.Any.OpenApiObject
             {

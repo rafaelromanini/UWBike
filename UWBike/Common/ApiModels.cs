@@ -2,14 +2,14 @@ namespace UWBike.Common
 {
     public class PagedResult<T>
     {
-        public IEnumerable<T> Data { get; set; } = new List<T>();
+        public IEnumerable<T> Data { get; set; } = [];
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
         public int TotalRecords { get; set; }
         public int TotalPages { get; set; }
         public bool HasPrevious { get; set; }
         public bool HasNext { get; set; }
-        public List<Link> Links { get; set; } = new List<Link>();
+        public List<Link> Links { get; set; } = [];
 
         public PagedResult(IEnumerable<T> data, int pageNumber, int pageSize, int totalRecords)
         {
@@ -44,8 +44,8 @@ namespace UWBike.Common
         public T? Data { get; set; }
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
-        public List<string> Errors { get; set; } = new List<string>();
-        public List<Link> Links { get; set; } = new List<Link>();
+        public List<string> Errors { get; set; } = [];
+        public List<Link> Links { get; set; } = [];
 
         public ApiResponse(T? data, bool success = true, string message = "")
         {
@@ -63,7 +63,7 @@ namespace UWBike.Common
         {
             return new ApiResponse<T>(default(T), false, message)
             {
-                Errors = errors ?? new List<string>()
+                Errors = errors ?? []
             };
         }
     }
