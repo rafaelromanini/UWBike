@@ -38,10 +38,8 @@ namespace UWBike.Controllers
                 // Filtro de busca por modelo, placa, chassi ou pátio
                 if (!string.IsNullOrWhiteSpace(parameters.Search))
                 {
-                    query = query.Where(m => m.Modelo.Contains(parameters.Search) || 
-                                           m.Placa.Contains(parameters.Search) ||
-                                           m.Chassi.Contains(parameters.Search) ||
-                                           m.Patio.Nome.Contains(parameters.Search));
+                    query = query.Where(m => m.Placa.Contains(parameters.Search) ||
+                                           m.Chassi.Contains(parameters.Search));
                 }
 
                 // Ordenação
