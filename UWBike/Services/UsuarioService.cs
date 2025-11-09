@@ -2,6 +2,7 @@ using UWBike.Interfaces;
 using UWBike.Model;
 using UWBike.Common;
 using UWBike.Controllers;
+using DTOs;
 
 namespace UWBike.Services
 {
@@ -14,30 +15,33 @@ namespace UWBike.Services
             _usuarioRepository = usuarioRepository;
         }
 
-        public async Task<PagedResult<Usuario>> GetAllAsync(PaginationParameters parameters)
+        public async Task<PagedResult<UsuarioDto>> GetAllAsync(PaginationParameters parameters)
         {
             var (usuarios, totalRecords) = await _usuarioRepository.GetPagedAsync(parameters);
+            var usuarioDtos = usuarios.Select(UsuarioDto.FromUsuario).ToList();
             
-            return new PagedResult<Usuario>(usuarios.ToList(), parameters.PageNumber, parameters.PageSize, totalRecords);
+            return new PagedResult<UsuarioDto>(usuarioDtos, parameters.PageNumber, parameters.PageSize, totalRecords);
         }
 
-        public async Task<Usuario?> GetByIdAsync(int id)
+        public async Task<UsuarioDto?> GetByIdAsync(int id)
         {
             if (id <= 0)
                 throw new ArgumentException("ID deve ser maior que zero");
 
-            return await _usuarioRepository.GetByIdAsync(id);
+            var usuario = await _usuarioRepository.GetByIdAsync(id);
+            return usuario == null ? null : UsuarioDto.FromUsuario(usuario);
         }
 
-        public async Task<Usuario?> GetByEmailAsync(string email)
+        public async Task<UsuarioDto?> GetByEmailAsync(string email)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email é obrigatório");
 
-            return await _usuarioRepository.GetByEmailAsync(email);
+            var usuario = await _usuarioRepository.GetByEmailAsync(email);
+            return usuario == null ? null : UsuarioDto.FromUsuario(usuario);
         }
 
-        public async Task<Usuario> CreateAsync(CreateUsuarioDto usuarioDto)
+        public async Task<UsuarioDto> CreateAsync(CreateUsuarioDto usuarioDto)
         {
             // REGRA DE NEGÓCIO: Verificar se já existe usuário com este email
             var exists = await _usuarioRepository.ExistsByEmailAsync(usuarioDto.Email);
@@ -45,10 +49,11 @@ namespace UWBike.Services
                 throw new InvalidOperationException("Já existe um usuário com este email");
 
             var usuario = new Usuario(usuarioDto.Nome, usuarioDto.Email, usuarioDto.Senha);
-            return await _usuarioRepository.CreateAsync(usuario);
+            var created = await _usuarioRepository.CreateAsync(usuario);
+            return UsuarioDto.FromUsuario(created);
         }
 
-        public async Task<Usuario> UpdateAsync(int id, UpdateUsuarioDto usuarioDto)
+        public async Task<UsuarioDto> UpdateAsync(int id, UpdateUsuarioDto usuarioDto)
         {
             if (id <= 0)
                 throw new ArgumentException("ID deve ser maior que zero");
@@ -76,7 +81,8 @@ namespace UWBike.Services
             if (!string.IsNullOrWhiteSpace(usuarioDto.Senha))
                 usuario.Senha = usuarioDto.Senha;
 
-            return await _usuarioRepository.UpdateAsync(usuario);
+            var updated = await _usuarioRepository.UpdateAsync(usuario);
+            return UsuarioDto.FromUsuario(updated);
         }
 
         public async Task<bool> DeleteAsync(int id)
