@@ -163,6 +163,9 @@ builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
 builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
 
+// Registrar ML Prediction Service como Singleton (modelo carregado uma vez)
+builder.Services.AddSingleton<MLPredictionService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
