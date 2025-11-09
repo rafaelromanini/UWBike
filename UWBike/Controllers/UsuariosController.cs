@@ -6,12 +6,15 @@ using UWBike.Common;
 using System.ComponentModel.DataAnnotations;
 using UWBike.Interfaces;
 using DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UWBike.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     [Produces("application/json")]
+    [Authorize] // Requer autenticação para todos os endpoints
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuarioService _usuarioService;
@@ -132,43 +135,6 @@ namespace UWBike.Controllers
             catch (ArgumentException ex)
             {
                 return BadRequest(ApiResponse<UsuarioDto>.ErrorResponse(ex.Message));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ApiResponse<UsuarioDto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
-            }
-        }
-
-        /// <summary>
-        /// Cria um novo usuário
-        /// </summary>
-        /// <param name="usuarioDto">Dados do usuário a ser criado</param>
-        /// <returns>Usuário criado</returns>
-        [HttpPost]
-        [ProducesResponseType(typeof(ApiResponse<UsuarioDto>), 201)]
-        [ProducesResponseType(400)]
-        [ProducesResponseType(409)]
-        [ProducesResponseType(500)]
-        public async Task<ActionResult<ApiResponse<UsuarioDto>>> Create([FromBody] CreateUsuarioDto usuarioDto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    var errors = ModelState.SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage)).ToList();
-                    return BadRequest(ApiResponse<UsuarioDto>.ErrorResponse("Dados inválidos", errors));
-                }
-
-                var usuario = await _usuarioService.CreateAsync(usuarioDto);
-
-                var response = ApiResponse<UsuarioDto>.SuccessResponse(usuario, "Usuário criado com sucesso");
-                HateoasHelper.AddHateoasLinks(response, "Usuarios", usuario.Id, Url);
-
-                return CreatedAtAction(nameof(GetById), new { id = usuario.Id }, response);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(ApiResponse<UsuarioDto>.ErrorResponse(ex.Message));
             }
             catch (Exception ex)
             {

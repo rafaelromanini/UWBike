@@ -41,18 +41,6 @@ namespace UWBike.Services
             return usuario == null ? null : UsuarioDto.FromUsuario(usuario);
         }
 
-        public async Task<UsuarioDto> CreateAsync(CreateUsuarioDto usuarioDto)
-        {
-            // REGRA DE NEGÓCIO: Verificar se já existe usuário com este email
-            var exists = await _usuarioRepository.ExistsByEmailAsync(usuarioDto.Email);
-            if (exists)
-                throw new InvalidOperationException("Já existe um usuário com este email");
-
-            var usuario = new Usuario(usuarioDto.Nome, usuarioDto.Email, usuarioDto.Senha);
-            var created = await _usuarioRepository.CreateAsync(usuario);
-            return UsuarioDto.FromUsuario(created);
-        }
-
         public async Task<UsuarioDto> UpdateAsync(int id, UpdateUsuarioDto usuarioDto)
         {
             if (id <= 0)
@@ -79,7 +67,7 @@ namespace UWBike.Services
                 usuario.Email = usuarioDto.Email;
             
             if (!string.IsNullOrWhiteSpace(usuarioDto.Senha))
-                usuario.Senha = usuarioDto.Senha;
+                usuario.Senha = BCrypt.Net.BCrypt.HashPassword(usuarioDto.Senha);
 
             var updated = await _usuarioRepository.UpdateAsync(usuario);
             return UsuarioDto.FromUsuario(updated);

@@ -8,6 +8,7 @@ namespace UWBike.Interfaces
     {
         Task<PagedResult<PatioDto>> GetAllAsync(PaginationParameters parameters);
         Task<PatioDto?> GetByIdAsync(int id);
+        Task<List<PatioDto>> GetByIdOrNameAsync(string identificador);
         Task<PagedResult<MotoDto>> GetMotosFromPatioAsync(int patioId, PaginationParameters parameters);
         Task<PatioDto> CreateAsync(CreatePatioDto patioDto);
         Task<PatioDto> UpdateAsync(int id, UpdatePatioDto patioDto);

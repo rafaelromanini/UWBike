@@ -5,10 +5,16 @@ using UWBike.Connection;
 using UWBike.Repositories;
 using UWBike.Interfaces;
 using UWBike.Services;
+using UWBike.Common;
 using DTOs;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using System.Text.Json;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
+using Microsoft.AspNetCore.Mvc.Versioning;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,18 +22,117 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// Versionamento
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        new UrlSegmentApiVersionReader()
+    );
+});
+
+// Permite o Swagger detectar versões da API
+builder.Services.AddVersionedApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";         // v1, v2
+    options.SubstituteApiVersionInUrl = true;
+});
+
 // Configurar Health Checks
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("database");
 
-// Configuração avançada do Swagger
+// Configurar autenticação JWT
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!))
+    };
+});
+
+// Configuração avançada do Swagger usando VersionedApiExplorer
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    // Configurar autenticação JWT no Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Title = "UWBike API",
-        Version = "v1",
-        Description = "API RESTful para gerenciamento de motos, usuários e pátios da UWBike",
+        Description = "JWT Authorization header usando o esquema Bearer. \r\n\r\n" +
+                      "Digite 'Bearer' [espaço] e então seu token.\r\n\r\n" +
+                      "Exemplo: 'Bearer 12345abcdef'",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "UWBike API - v1", 
+        Version = "v1.0",
+        Description = @"API RESTful para gerenciamento de motos, usuários e pátios da UWBike com autenticação JWT.
+        
+**Versão 1.0:**
+- Endpoint GET /api/v1/patios/{id} busca pátios apenas por ID (número inteiro)
+- Retorna um único objeto PatioDto"
+    });
+
+    c.SwaggerDoc("v2", new OpenApiInfo 
+    { 
+        Title = "UWBike API - v2", 
+        Version = "v2.0",
+        Description = @"API RESTful para gerenciamento de motos, usuários e pátios da UWBike com autenticação JWT.
+        
+**Versão 2.0:**
+- Endpoint GET /api/v2/patios/{identificador} busca pátios por ID (número) ou Nome (texto)
+- Retorna uma lista de PatioDto (suporta busca por nome com múltiplos resultados)"
+    });
+
+    c.DocInclusionPredicate((version, desc) =>
+    {
+        if (desc.RelativePath != null && desc.RelativePath.Contains("/v"))
+        {
+            var routeVersion = desc.RelativePath.Split('/')[1];
+            return routeVersion.StartsWith(version.Replace(".", ""));
+        }
+        
+        return version == "v1"; // default para v1
     });
 
     // Incluir comentários XML para documentação
@@ -40,9 +145,6 @@ builder.Services.AddSwaggerGen(c =>
 
     // Configurar exemplos para os schemas
     c.SchemaFilter<ExampleSchemaFilter>();
-    
-    // Configurar ordenação das operações
-    c.OrderActionsBy(apiDesc => $"{apiDesc.ActionDescriptor.RouteValues["controller"]}_{apiDesc.HttpMethod}");
 });
 
 // DbContext com string de conexão
@@ -59,6 +161,8 @@ builder.Services.AddScoped<IPatioService, PatioService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
+builder.Services.AddScoped<IAutenticacaoService, AutenticacaoService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
@@ -74,28 +178,33 @@ var app = builder.Build();
 
 app.UseCors("CorsPolicy");
 
+var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "UWBike API V1");
-        c.RoutePrefix = string.Empty; // Para acessar o Swagger na raiz
-        c.DocumentTitle = "UWBike API Documentation";
-        c.DefaultModelsExpandDepth(-1); // Colapsar modelos por padrão
-        c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
-        c.EnableFilter();
-        c.EnableDeepLinking();
-        c.DisplayRequestDuration();
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            c.SwaggerEndpoint(
+                $"/swagger/{description.GroupName}/swagger.json",
+                $"UWBike API {description.ApiVersion}");
+            c.RoutePrefix = string.Empty;
+        }
     });
 }
 
 app.UseHttpsRedirection();
+
+// Autenticação e autorização DEVEM vir nessa ordem
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
-// Endpoint de Health Check
+// Endpoint de Health Check com detalhes em JSON
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
     ResponseWriter = async (context, report) =>

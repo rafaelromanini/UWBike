@@ -31,6 +31,38 @@ namespace UWBike.Services
             return patio == null ? null : PatioDto.fromPatio(patio);
         }
 
+        public async Task<List<PatioDto>> GetByIdOrNameAsync(string identificador)
+        {
+            if (string.IsNullOrWhiteSpace(identificador))
+                throw new ArgumentException("Identificador é obrigatório");
+
+            List<PatioDto> patios = new List<PatioDto>();
+
+            // Tentar converter para int (ID)
+            if (int.TryParse(identificador, out int id))
+            {
+                var patio = await GetByIdAsync(id);
+                if (patio != null)
+                {
+                    patios.Add(patio);
+                }
+            }
+            else
+            {
+                // Buscar por nome usando paginação
+                var todosPaginated = await GetAllAsync(new PaginationParameters
+                {
+                    Search = identificador,
+                    PageNumber = 1,
+                    PageSize = 100
+                });
+
+                patios = todosPaginated.Data.ToList();
+            }
+
+            return patios;
+        }
+
         public async Task<PagedResult<MotoDto>> GetMotosFromPatioAsync(int patioId, PaginationParameters parameters)
         {
             if (patioId <= 0)

@@ -88,11 +88,11 @@ dotnet run
 ---
 ## � **Exemplos de Uso dos Endpoints**
 
-### **Usuários (`/api/usuarios`)**
+### **Usuários (`/api/v1/usuarios`)**
 
 #### **Criar Usuário:**
 ```bash
-POST /api/usuarios
+POST /api/v1/usuarios
 Content-Type: application/json
 
 {
@@ -104,17 +104,17 @@ Content-Type: application/json
 
 #### **Listar Usuários com Paginação:**
 ```bash
-GET /api/usuarios?pageNumber=1&pageSize=10&search=joão&sortBy=nome&sortDescending=false
+GET /api/v1/usuarios?pageNumber=1&pageSize=10&search=joão&sortBy=nome&sortDescending=false
 ```
 
 #### **Buscar Usuário por Email:**
 ```bash
-GET /api/usuarios/buscar?email=joao.silva@email.com
+GET /api/v1/usuarios/buscar?email=joao.silva@email.com
 ```
 
 #### **Atualizar Usuário:**
 ```bash
-PUT /api/usuarios/1
+PUT /api/v1/usuarios/1
 Content-Type: application/json
 
 {
@@ -123,11 +123,11 @@ Content-Type: application/json
 }
 ```
 
-### **Pátios (`/api/patios`)**
+### **Pátios (`/api/v2/patios`)**
 
 #### **Criar Pátio:**
 ```bash
-POST /api/patios
+POST /api/v2/patios
 Content-Type: application/json
 
 {
@@ -143,14 +143,14 @@ Content-Type: application/json
 
 #### **Listar Motos de um Pátio:**
 ```bash
-GET /api/patios/1/motos?pageNumber=1&pageSize=10
+GET /api/v2/patios/1/motos?pageNumber=1&pageSize=10
 ```
 
-### **Motos (`/api/motos`)**
+### **Motos (`/api/v1/motos`)**
 
 #### **Criar Moto (Regra de Negócio):**
 ```bash
-POST /api/motos
+POST /api/v1/motos
 Content-Type: application/json
 
 {
@@ -165,12 +165,12 @@ Content-Type: application/json
 
 #### **Buscar Moto por Placa:**
 ```bash
-GET /api/motos/buscar?placa=ABC-1234
+GET /api/v1/motos/buscar?placa=ABC-1234
 ```
 
 #### **Listar Motos com Filtros:**
 ```bash
-GET /api/motos?pageNumber=1&pageSize=5&search=Honda&sortBy=modelo&sortDescending=true
+GET /api/v1/motos?pageNumber=1&pageSize=5&search=Honda&sortBy=modelo&sortDescending=true
 ```
 
 ### **Exemplo de Resposta com HATEOAS:**
@@ -187,22 +187,22 @@ GET /api/motos?pageNumber=1&pageSize=5&search=Honda&sortBy=modelo&sortDescending
   "errors": [],
   "links": [
     {
-      "href": "/api/usuarios/1",
+      "href": "/api/v1/usuarios/1",
       "rel": "self",
       "method": "GET"
     },
     {
-      "href": "/api/usuarios/1",
+      "href": "/api/v1/usuarios/1",
       "rel": "update",
       "method": "PUT"
     },
     {
-      "href": "/api/usuarios/1",
+      "href": "/api/v1/usuarios/1",
       "rel": "delete",
       "method": "DELETE"
     },
     {
-      "href": "/api/usuarios",
+      "href": "/api/v1/usuarios",
       "rel": "list",
       "method": "GET"
     }
@@ -234,43 +234,63 @@ UWBike/
 
 ## 🔗 **Endpoints da API**
 
-### **Usuários:**
-| Método | Endpoint | Descrição |
-|---------|----------|-----------|
-| `GET` | `/api/usuarios` | Lista usuários com paginação |
-| `GET` | `/api/usuarios/{id}` | Busca usuário por ID |
-| `GET` | `/api/usuarios/buscar?email=` | Busca por email |
-| `POST` | `/api/usuarios` | Cria novo usuário |
-| `PUT` | `/api/usuarios/{id}` | Atualiza usuário |
-| `DELETE` | `/api/usuarios/{id}` | Remove usuário |
+> **⚠️ Versionamento:** Todos os endpoints agora incluem versionamento na URL: `/api/v1/...` ou `/api/v2/...`
 
-### **Pátios:**
-| Método | Endpoint | Descrição |
-|---------|----------|-----------|
-| `GET` | `/api/patios` | Lista pátios com paginação |
-| `GET` | `/api/patios/{id}` | Busca pátio por ID |
-| `GET` | `/api/patios/{id}/motos` | Lista motos do pátio |
-| `POST` | `/api/patios` | Cria novo pátio |
-| `PUT` | `/api/patios/{id}` | Atualiza pátio |
-| `DELETE` | `/api/patios/{id}` | Remove pátio |
+### **Autenticação (Público):**
+| Método | Endpoint | Versão | Descrição |
+|---------|----------|---------|-----------|
+| `POST` | `/api/v1/autenticacao/registro` | v1 | Registra um novo usuário |
+| `POST` | `/api/v1/autenticacao/login` | v1 | Autentica usuário e retorna token JWT |
 
-### **Motos:**
-| Método | Endpoint | Descrição |
-|---------|----------|-----------|
-| `GET` | `/api/motos` | Lista motos com paginação |
-| `GET` | `/api/motos/{id}` | Busca moto por ID |
-| `GET` | `/api/motos/buscar?placa=` | Busca por placa |
-| `POST` | `/api/motos` | Cria nova moto (com regra de negócio) |
-| `PUT` | `/api/motos/{id}` | Atualiza moto |
-| `DELETE` | `/api/motos/{id}` | Remove moto |
+### **Usuários (Requer Autenticação):**
+| Método | Endpoint | Versão | Descrição |
+|---------|----------|---------|-----------|
+| `GET` | `/api/v1/usuarios` | v1 | Lista usuários com paginação |
+| `GET` | `/api/v1/usuarios/{id}` | v1 | Busca usuário por ID |
+| `GET` | `/api/v1/usuarios/buscar?email=` | v1 | Busca por email |
+| `PUT` | `/api/v1/usuarios/{id}` | v1 | Atualiza usuário |
+| `DELETE` | `/api/v1/usuarios/{id}` | v1 | Remove usuário |
 
-### **Health Checks:**
+### **Pátios (Requer Autenticação):**
+| Método | Endpoint | Versão | Descrição |
+|---------|----------|---------|-----------|
+| `GET` | `/api/v1/patios` | v1 | Lista pátios com paginação |
+| `GET` | `/api/v1/patios/{id}` | v1 | Busca pátio por ID (apenas numérico) |
+| `GET` | `/api/v2/patios/{identificador}` | v2 | Busca por ID ou Nome (retorna lista) |
+| `GET` | `/api/v1/patios/{id}/motos` | v1 | Lista motos do pátio |
+| `POST` | `/api/v1/patios` | v1 | Cria novo pátio |
+| `PUT` | `/api/v1/patios/{id}` | v1 | Atualiza pátio |
+| `DELETE` | `/api/v1/patios/{id}` | v1 | Remove pátio |
+
+**Exemplos:**
+```bash
+# v1 - Busca apenas por ID
+GET /api/v1/patios/1
+
+# v2 - Busca por ID
+GET /api/v2/patios/1
+
+# v2 - Busca por nome (pode retornar múltiplos)
+GET /api/v2/patios/Central
+```
+
+### **Motos (Requer Autenticação):**
+| Método | Endpoint | Versão | Descrição |
+|---------|----------|---------|-----------|
+| `GET` | `/api/v1/motos` | v1 | Lista motos com paginação |
+| `GET` | `/api/v1/motos/{id}` | v1 | Busca moto por ID |
+| `GET` | `/api/v1/motos/buscar?placa=` | v1 | Busca por placa |
+| `POST` | `/api/v1/motos` | v1 | Cria nova moto (com regra de negócio) |
+| `PUT` | `/api/v1/motos/{id}` | v1 | Atualiza moto |
+| `DELETE` | `/api/v1/motos/{id}` | v1 | Remove moto |
+
+### **Health Checks (Público):**
 | Método | Endpoint | Descrição |
 |---------|----------|-----------|
-| `GET` | `/health` | Verifica saúde da aplicação |
+| `GET` | `/health` | Verifica saúde da aplicação com detalhes JSON |
 
 #### **Exemplo de Resposta - `/health`:**
-```
+```json
 {
   "status": "Healthy",
   "timestamp": "2025-11-09T18:30:45.1234567Z",
@@ -295,13 +315,160 @@ UWBike/
 
 ---
 
+## � **Versionamento da API**
+
+A API implementa versionamento através da URL, permitindo evolução sem quebrar clientes existentes.
+
+### **Configuração:**
+- **Versão Padrão:** v1.0
+- **Formato da URL:** `/api/v{version}/[controller]`
+- **Header de Versão:** Retornado em todas as respostas
+
+### **Versões Disponíveis:**
+
+#### **v1.0 (Atual):**
+- ✅ Todos os endpoints básicos
+- ✅ Autenticação JWT
+- ✅ CRUD completo de Usuários, Motos e Pátios
+- ✅ Busca de pátios **apenas por ID numérico**
+
+#### **v2.0 (Nova):**
+- ✅ Busca de pátios **por ID ou Nome**
+- ✅ Retorna **lista de pátios** (suporta múltiplos resultados)
+- ✅ Endpoint: `GET /api/v2/patios/{identificador}`
+
+### **Exemplos de Uso:**
+
+**v1 - Busca tradicional por ID:**
+```bash
+GET /api/v1/patios/1
+Authorization: Bearer TOKEN
+```
+**Resposta v1:**
+```json
+{
+  "data": {
+    "id": 1,
+    "nome": "Pátio Central",
+    ...
+  },
+  "success": true
+}
+```
+
+**v2 - Busca por ID ou Nome:**
+```bash
+# Por ID
+GET /api/v2/patios/1
+Authorization: Bearer TOKEN
+
+# Por Nome (pode retornar múltiplos)
+GET /api/v2/patios/Central
+Authorization: Bearer TOKEN
+```
+**Resposta v2:**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "nome": "Pátio Central SP",
+      ...
+    },
+    {
+      "id": 2,
+      "nome": "Pátio Central RJ",
+      ...
+    }
+  ],
+  "success": true,
+  "message": "2 pátios encontrados com sucesso"
+}
+```
+
+### **Comportamento do Versionamento:**
+- 🔹 Clientes podem especificar a versão na URL
+- 🔹 Se nenhuma versão for especificada, usa v1.0 (padrão)
+- 🔹 Header `api-supported-versions` informa versões disponíveis
+- 🔹 Versões antigas continuam funcionando (backward compatibility)
+
+---
+
+## �🔐 **Autenticação JWT**
+
+A API utiliza autenticação JWT (JSON Web Token) para proteger os endpoints. Apenas os endpoints de autenticação e health checks são públicos.
+
+### **Como Autenticar:**
+
+1. **Registrar um novo usuário:**
+```bash
+POST /api/v1/autenticacao/registro
+Content-Type: application/json
+
+{
+  "nome": "João Silva",
+  "email": "joao.silva@email.com",
+  "senha": "senha123",
+  "confirmacaoSenha": "senha123"
+}
+```
+
+**Resposta:**
+```json
+{
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expiresAt": "2025-11-09T19:30:00Z",
+    "email": "joao.silva@email.com",
+    "nome": "João Silva"
+  },
+  "success": true,
+  "message": "Usuário registrado com sucesso"
+}
+```
+
+2. **Fazer login:**
+```bash
+POST /api/v1/autenticacao/login
+Content-Type: application/json
+
+{
+  "email": "joao.silva@email.com",
+  "senha": "senha123"
+}
+```
+
+3. **Usar o token nas requisições:**
+```bash
+GET /api/v1/usuarios
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+### **Configurações JWT:**
+- **Expiração do Token:** 120 minutos (configurável em `appsettings.json`)
+- **Algoritmo:** HMAC SHA-256
+- **Senhas:** Criptografadas com BCrypt
+
+### **Segurança Implementada:**
+✅ Senhas hasheadas com BCrypt  
+✅ Tokens JWT assinados  
+✅ Validação de issuer, audience e lifetime  
+✅ Proteção de todos os endpoints (exceto autenticação e health checks)  
+✅ Integração com Swagger UI para testes autenticados
+
+---
+
 ## 🚀 **Tecnologias Utilizadas**
 - **ASP.NET Core 9.0** - Framework web moderno e performático
 - **Entity Framework Core** - ORM com suporte nativo ao Oracle
 - **Oracle Database** - Banco de dados empresarial robusto
 - **Swagger/OpenAPI** - Documentação automática e interativa
+- **JWT Bearer Authentication** - Autenticação segura com tokens
+- **BCrypt.Net** - Criptografia de senhas
+- **API Versioning** - Versionamento de endpoints via URL
 - **HATEOAS** - Hypermedia as the Engine of Application State
 - **Data Annotations** - Validações de modelo integradas
+- **Health Checks** - Monitoramento de saúde da aplicação
 
 ---
 

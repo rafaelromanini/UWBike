@@ -6,12 +6,16 @@ using UWBike.Common;
 using System.ComponentModel.DataAnnotations;
 using DTOs;
 using UWBike.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UWBike.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     [Produces("application/json")]
+    [Authorize] // Requer autenticação para todos os endpoints
     public class PatiosController : ControllerBase
     {
         private readonly IPatioService _patioService;
@@ -59,11 +63,11 @@ namespace UWBike.Controllers
         }
 
         /// <summary>
-        /// Obtém um pátio específico por ID
+        /// Obtém um pátio específico por ID (v1)
         /// </summary>
         /// <param name="id">ID do pátio</param>
         /// <returns>Dados do pátio</returns>
-        [HttpGet("{id:int}")]
+        [HttpGet("{id:int}"), MapToApiVersion("1.0")]
         [ProducesResponseType(typeof(ApiResponse<PatioDto>), 200)]
         [ProducesResponseType(404)]
         [ProducesResponseType(400)]
@@ -90,6 +94,44 @@ namespace UWBike.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResponse<PatioDto>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Obtém pátio(s) por ID ou Nome (v2)
+        /// </summary>
+        /// <param name="identificador">ID numérico ou nome do pátio</param>
+        /// <returns>Dados do(s) pátio(s)</returns>
+        [HttpGet("{identificador}"), MapToApiVersion("2.0")]
+        [ProducesResponseType(typeof(ApiResponse<List<PatioDto>>), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<ActionResult<ApiResponse<List<PatioDto>>>> GetByIdOrName(string identificador)
+        {
+            try
+            {
+                var patios = await _patioService.GetByIdOrNameAsync(identificador);
+
+                if (patios.Count == 0)
+                {
+                    return NotFound(ApiResponse<List<PatioDto>>.ErrorResponse("Nenhum pátio encontrado com o identificador fornecido"));
+                }
+
+                var response = ApiResponse<List<PatioDto>>.SuccessResponse(
+                    patios,
+                    patios.Count == 1 ? "Pátio encontrado com sucesso" : $"{patios.Count} pátios encontrados com sucesso"
+                );
+
+                return Ok(response);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ApiResponse<List<PatioDto>>.ErrorResponse(ex.Message));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<List<PatioDto>>.ErrorResponse($"Erro interno do servidor: {ex.Message}"));
             }
         }
 

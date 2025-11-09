@@ -6,12 +6,15 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using DTOs;
 using UWBike.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UWBike.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     [Produces("application/json")]
+    [Authorize] // Requer autenticação para todos os endpoints
     public class MotosController : ControllerBase
     {
         private readonly IMotoService _motoService;

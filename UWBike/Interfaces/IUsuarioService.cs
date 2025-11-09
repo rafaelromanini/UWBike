@@ -10,7 +10,6 @@ namespace UWBike.Interfaces
         Task<PagedResult<UsuarioDto>> GetAllAsync(PaginationParameters parameters);
         Task<UsuarioDto?> GetByIdAsync(int id);
         Task<UsuarioDto?> GetByEmailAsync(string email);
-        Task<UsuarioDto> CreateAsync(CreateUsuarioDto usuarioDto);
         Task<UsuarioDto> UpdateAsync(int id, UpdateUsuarioDto usuarioDto);
         Task<bool> DeleteAsync(int id);
     }
