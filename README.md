@@ -264,6 +264,35 @@ UWBike/
 | `PUT` | `/api/motos/{id}` | Atualiza moto |
 | `DELETE` | `/api/motos/{id}` | Remove moto |
 
+### **Health Checks:**
+| Método | Endpoint | Descrição |
+|---------|----------|-----------|
+| `GET` | `/health` | Verifica saúde da aplicação |
+
+#### **Exemplo de Resposta - `/health`:**
+```
+{
+  "status": "Healthy",
+  "timestamp": "2025-11-09T18:30:45.1234567Z",
+  "duration": "00:00:00.0123456",
+  "checks": [
+    {
+      "name": "database",
+      "status": "Healthy",
+      "description": null,
+      "duration": "00:00:00.0098765",
+      "exception": null,
+      "data": {}
+    }
+  ]
+}
+```
+
+**Status possíveis:**
+- `Healthy` - Todos os checks estão funcionando
+- `Degraded` - Sistema funcionando com limitações
+- `Unhealthy` - Sistema com problemas críticos
+
 ---
 
 ## 🚀 **Tecnologias Utilizadas**

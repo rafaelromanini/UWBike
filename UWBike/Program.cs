@@ -6,12 +6,19 @@ using UWBike.Repositories;
 using UWBike.Interfaces;
 using UWBike.Services;
 using DTOs;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using System.Text.Json;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+
+// Configurar Health Checks
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("database");
 
 // Configuração avançada do Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -87,6 +94,36 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+// Endpoint de Health Check
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        
+        var result = JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            timestamp = DateTime.UtcNow,
+            duration = report.TotalDuration,
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                description = entry.Value.Description,
+                duration = entry.Value.Duration,
+                exception = entry.Value.Exception?.Message,
+                data = entry.Value.Data
+            })
+        }, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+        
+        await context.Response.WriteAsync(result);
+    }
+});
 
 app.Run();
 
