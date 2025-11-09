@@ -2,6 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using UWBike.Connection;
+using UWBike.Repositories;
+using UWBike.Interfaces;
+using UWBike.Services;
 using DTOs;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,16 +21,6 @@ builder.Services.AddSwaggerGen(c =>
         Title = "UWBike API",
         Version = "v1",
         Description = "API RESTful para gerenciamento de motos, usuários e pátios da UWBike",
-        Contact = new OpenApiContact
-        {
-            Name = "Equipe UWBike",
-            Email = "contato@uwbike.com"
-        },
-        License = new OpenApiLicense
-        {
-            Name = "MIT License",
-            Url = new Uri("https://opensource.org/licenses/MIT")
-        }
     });
 
     // Incluir comentários XML para documentação
@@ -49,12 +42,22 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("OracleConnection")));
 
+// Registrar repositories e services seguindo boas práticas (Scoped para trabalhar com DbContext)
+builder.Services.AddScoped<IMotoRepository, MotoRepository>();
+builder.Services.AddScoped<IMotoService, MotoService>();
+
+builder.Services.AddScoped<IPatioRepository, PatioRepository>();
+builder.Services.AddScoped<IPatioService, PatioService>();
+
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy", policy =>
     {
         policy
-            .AllowAnyOrigin()   // Ou .WithOrigins("http://localhost:3000") para limitar
+            .AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
@@ -101,7 +104,7 @@ public class ExampleSchemaFilter : Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilt
                 ["senha"] = new Microsoft.OpenApi.Any.OpenApiString("senha123")
             };
         }
-        else if (context.Type == typeof(DTOs.CreatePatioDto))
+        else if (context.Type == typeof(CreatePatioDto))
         {
             schema.Example = new Microsoft.OpenApi.Any.OpenApiObject
             {
@@ -114,7 +117,7 @@ public class ExampleSchemaFilter : Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilt
                 ["telefone"] = new Microsoft.OpenApi.Any.OpenApiString("11999999999")
             };
         }
-        else if (context.Type == typeof(DTOs.CreateMotoDto))
+        else if (context.Type == typeof(CreateMotoDto))
         {
             schema.Example = new Microsoft.OpenApi.Any.OpenApiObject
             {

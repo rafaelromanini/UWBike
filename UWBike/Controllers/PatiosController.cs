@@ -5,6 +5,7 @@ using UWBike.Model;
 using UWBike.Common;
 using System.ComponentModel.DataAnnotations;
 using DTOs;
+using UWBike.Interfaces;
 
 namespace UWBike.Controllers
 {
@@ -13,11 +14,11 @@ namespace UWBike.Controllers
     [Produces("application/json")]
     public class PatiosController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly IPatioService _patioService;
 
-        public PatiosController(AppDbContext context)
+        public PatiosController(IPatioService patioService)
         {
-            _context = context;
+            _patioService = patioService;
         }
 
         /// <summary>
@@ -33,58 +34,7 @@ namespace UWBike.Controllers
         {
             try
             {
-                var query = _context.Patios.Include(p => p.Motos).AsQueryable();
-
-                // Filtro de busca por nome, cidade ou endereço
-                if (!string.IsNullOrWhiteSpace(parameters.Search))
-                {
-                    query = query.Where(p => p.Nome.Contains(parameters.Search) ||
-                                           (p.Cidade != null && p.Cidade.Contains(parameters.Search)) ||
-                                           p.Endereco.Contains(parameters.Search));
-                }
-
-                // Ordenação
-                if (!string.IsNullOrWhiteSpace(parameters.SortBy))
-                {
-                    switch (parameters.SortBy.ToLower())
-                    {
-                        case "nome":
-                            query = parameters.SortDescending ?
-                                query.OrderByDescending(p => p.Nome) :
-                                query.OrderBy(p => p.Nome);
-                            break;
-                        case "cidade":
-                            query = parameters.SortDescending ?
-                                query.OrderByDescending(p => p.Cidade) :
-                                query.OrderBy(p => p.Cidade);
-                            break;
-                        case "capacidade":
-                            query = parameters.SortDescending ?
-                                query.OrderByDescending(p => p.Capacidade) :
-                                query.OrderBy(p => p.Capacidade);
-                            break;
-                        case "datacriacao":
-                            query = parameters.SortDescending ?
-                                query.OrderByDescending(p => p.DataCriacao) :
-                                query.OrderBy(p => p.DataCriacao);
-                            break;
-                        default:
-                            query = query.OrderBy(p => p.Id);
-                            break;
-                    }
-                }
-                else
-                {
-                    query = query.OrderBy(p => p.Id);
-                }
-
-                var totalRecords = await query.CountAsync();
-                var patios = await query
-                    .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-                    .Take(parameters.PageSize)
-                    .ToListAsync();
-
-                var pagedResult = new PagedResult<PatioDto>([.. patios.Select(PatioDto.fromPatio)], parameters.PageNumber, parameters.PageSize, totalRecords);
+                var pagedResult = await _patioService.GetAllAsync(parameters);
 
                 // Adicionar links HATEOAS para paginação
                 HateoasHelper.AddPaginationLinks(
@@ -126,17 +76,13 @@ namespace UWBike.Controllers
                 {
                     return BadRequest(ApiResponse<PatioDto>.ErrorResponse("ID deve ser maior que zero"));
                 }
-
-                var patio = await _context.Patios
-                    .Include(p => p.Motos)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
-                if (patio == null)
+                var patioDto = await _patioService.GetByIdAsync(id);
+                if (patioDto == null)
                 {
                     return NotFound(ApiResponse<PatioDto>.ErrorResponse("Pátio não encontrado"));
                 }
 
-                var response = ApiResponse<PatioDto>.SuccessResponse(PatioDto.fromPatio(patio), "Pátio encontrado com sucesso");
+                var response = ApiResponse<PatioDto>.SuccessResponse(patioDto, "Pátio encontrado com sucesso");
                 HateoasHelper.AddHateoasLinks(response, "Patios", id, Url);
 
                 return Ok(response);
@@ -166,35 +112,8 @@ namespace UWBike.Controllers
                 {
                     return BadRequest(ApiResponse<object>.ErrorResponse("ID deve ser maior que zero"));
                 }
-
-                var patio = await _context.Patios.FindAsync(id);
-                if (patio == null)
-                {
-                    return NotFound(ApiResponse<object>.ErrorResponse("Pátio não encontrado"));
-                }
-
-                var query = _context.Motos
-                    .Where(m => m.PatioId == id)
-                    .Include(m => m.Patio)
-                    .AsQueryable();
-
-                // Filtro de busca por modelo, placa ou chassi
-                if (!string.IsNullOrWhiteSpace(parameters.Search))
-                {
-                    query = query.Where(m => m.Modelo.Contains(parameters.Search) ||
-                                           m.Placa.Contains(parameters.Search) ||
-                                           m.Chassi.Contains(parameters.Search));
-                }
-
-                var totalRecords = await query.CountAsync();
-                var motos = await query
-                    .Skip((parameters.PageNumber - 1) * parameters.PageSize)
-                    .Take(parameters.PageSize)
-                    .ToListAsync();
-
-                var pagedResult = new PagedResult<MotoDto>([.. motos.Select(MotoDto.fromMoto)], parameters.PageNumber, parameters.PageSize, totalRecords);
-
-                return Ok(pagedResult);
+                var pagedMotos = await _patioService.GetMotosFromPatioAsync(id, parameters);
+                return Ok(pagedMotos);
             }
             catch (Exception ex)
             {
@@ -220,22 +139,11 @@ namespace UWBike.Controllers
                     var errors = ModelState.SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage)).ToList();
                     return BadRequest(ApiResponse<PatioDto>.ErrorResponse("Dados inválidos", errors));
                 }
+                var created = await _patioService.CreateAsync(patioDto);
+                var response = ApiResponse<PatioDto>.SuccessResponse(created, "Pátio criado com sucesso");
+                HateoasHelper.AddHateoasLinks(response, "Patios", created.Id, Url);
 
-                var patio = new Patio(patioDto.Nome, patioDto.Endereco, patioDto.Capacidade)
-                {
-                    Cep = patioDto.Cep,
-                    Cidade = patioDto.Cidade,
-                    Estado = patioDto.Estado,
-                    Telefone = patioDto.Telefone
-                };
-
-                _context.Patios.Add(patio);
-                await _context.SaveChangesAsync();
-
-                var response = ApiResponse<PatioDto>.SuccessResponse(PatioDto.fromPatio(patio), "Pátio criado com sucesso");
-                HateoasHelper.AddHateoasLinks(response, "Patios", patio.Id, Url);
-
-                return CreatedAtAction(nameof(GetById), new { id = patio.Id }, response);
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, response);
             }
             catch (Exception ex)
             {
@@ -262,50 +170,15 @@ namespace UWBike.Controllers
                 {
                     return BadRequest(ApiResponse<PatioDto>.ErrorResponse("ID deve ser maior que zero"));
                 }
-
                 if (!ModelState.IsValid)
                 {
                     var errors = ModelState.SelectMany(x => x.Value!.Errors.Select(e => e.ErrorMessage)).ToList();
                     return BadRequest(ApiResponse<PatioDto>.ErrorResponse("Dados inválidos", errors));
                 }
 
-                var patio = await _context.Patios.FindAsync(id);
-                if (patio == null)
-                {
-                    return NotFound(ApiResponse<PatioDto>.ErrorResponse("Pátio não encontrado"));
-                }
-
-                // Atualizar propriedades
-                if (!string.IsNullOrWhiteSpace(patioDto.Nome))
-                    patio.Nome = patioDto.Nome;
-
-                if (!string.IsNullOrWhiteSpace(patioDto.Endereco))
-                    patio.Endereco = patioDto.Endereco;
-
-                if (patioDto.Capacidade.HasValue && patioDto.Capacidade > 0)
-                    patio.Capacidade = patioDto.Capacidade.Value;
-
-                if (!string.IsNullOrWhiteSpace(patioDto.Cep))
-                    patio.Cep = patioDto.Cep;
-
-                if (!string.IsNullOrWhiteSpace(patioDto.Cidade))
-                    patio.Cidade = patioDto.Cidade;
-
-                if (!string.IsNullOrWhiteSpace(patioDto.Estado))
-                    patio.Estado = patioDto.Estado;
-
-                if (!string.IsNullOrWhiteSpace(patioDto.Telefone))
-                    patio.Telefone = patioDto.Telefone;
-
-                if (patioDto.Ativo.HasValue)
-                    patio.Ativo = patioDto.Ativo.Value;
-
-                patio.DataAtualizacao = DateTime.UtcNow;
-
-                await _context.SaveChangesAsync();
-
-                var response = ApiResponse<PatioDto>.SuccessResponse(PatioDto.fromPatio(patio), "Pátio atualizado com sucesso");
-                HateoasHelper.AddHateoasLinks(response, "Patios", patio.Id, Url);
+                var updated = await _patioService.UpdateAsync(id, patioDto);
+                var response = ApiResponse<PatioDto>.SuccessResponse(updated, "Pátio atualizado com sucesso");
+                HateoasHelper.AddHateoasLinks(response, "Patios", id, Url);
 
                 return Ok(response);
             }
@@ -334,29 +207,21 @@ namespace UWBike.Controllers
                 {
                     return BadRequest(ApiResponse<object>.ErrorResponse("ID deve ser maior que zero"));
                 }
-
-                var patio = await _context.Patios
-                    .Include(p => p.Motos)
-                    .FirstOrDefaultAsync(p => p.Id == id);
-
-                if (patio == null)
+                try
                 {
-                    return NotFound(ApiResponse<object>.ErrorResponse("Pátio não encontrado"));
+                    var deleted = await _patioService.DeleteAsync(id);
+                    var response = ApiResponse<object>.SuccessResponse(new object(), "Pátio removido com sucesso");
+                    response.Links.Add(new Link(Url.Action(nameof(GetAll), "Patios")!, "list"));
+                    return Ok(response);
                 }
-
-                // Verificar se o pátio tem motos associadas
-                if (patio.Motos.Any())
+                catch (InvalidOperationException ex)
                 {
-                    return Conflict(ApiResponse<object>.ErrorResponse($"Não é possível remover o pátio porque ele possui {patio.Motos.Count} moto(s) associada(s)"));
+                    // Distinguish not found vs business rule (has motos)
+                    if (ex.Message.Contains("não encontrado"))
+                        return NotFound(ApiResponse<object>.ErrorResponse(ex.Message));
+
+                    return Conflict(ApiResponse<object>.ErrorResponse(ex.Message));
                 }
-
-                _context.Patios.Remove(patio);
-                await _context.SaveChangesAsync();
-
-                var response = ApiResponse<object>.SuccessResponse(new object(), "Pátio removido com sucesso");
-                response.Links.Add(new Link(Url.Action(nameof(GetAll), "Patios")!, "list"));
-
-                return Ok(response);
             }
             catch (Exception ex)
             {
