@@ -86,7 +86,49 @@ dotnet run
 - **API Base:** http://localhost:5241/api
 
 ---
-## � **Exemplos de Uso dos Endpoints**
+
+## 🧪 **Testes**
+
+O projeto inclui testes unitários e de integração usando xUnit.
+
+### **Rodar Todos os Testes:**
+```bash
+cd UWBike.Tests
+dotnet test
+```
+
+### **Rodar com Detalhes:**
+```bash
+dotnet test --logger "console;verbosity=detailed"
+```
+
+### **Cobertura dos Testes:**
+- ✅ **Testes Unitários** - Validam a lógica de negócio dos Services (com Moq)
+- ✅ **Testes de Integração** - Validam endpoints públicos (login, registro, health check)
+- ✅ **Banco In-Memory** - Testes de integração usam banco em memória (não afetam Oracle)
+
+### **Estrutura dos Testes:**
+```
+UWBike.Tests/
+├── Unit/                              # Testes unitários
+│   ├── UsuarioServiceTests.cs        # Testa lógica do UsuarioService
+│   └── PatioServiceTests.cs          # Testa lógica do PatioService
+├── Integration/                       # Testes de integração
+│   ├── AutenticacaoControllerTests.cs # Testa login e registro
+│   ├── PublicEndpointsTests.cs       # Testa health check
+│   └── UWBikeWebApplicationFactory.cs # Configuração do servidor de teste
+└── UWBike.Tests.csproj               # Dependências e configurações
+```
+
+### **Tecnologias de Teste:**
+- **xUnit** - Framework de testes
+- **Moq** - Mock de dependências
+- **WebApplicationFactory** - Servidor de teste em memória
+- **EF Core InMemory** - Banco de dados em memória para testes
+
+---
+
+## 📖 **Exemplos de Uso dos Endpoints**
 
 ### **Usuários (`/api/v1/usuarios`)**
 
@@ -448,13 +490,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - **Expiração do Token:** 120 minutos (configurável em `appsettings.json`)
 - **Algoritmo:** HMAC SHA-256
 - **Senhas:** Criptografadas com BCrypt
-
-### **Segurança Implementada:**
-✅ Senhas hasheadas com BCrypt  
-✅ Tokens JWT assinados  
-✅ Validação de issuer, audience e lifetime  
-✅ Proteção de todos os endpoints (exceto autenticação e health checks)  
-✅ Integração com Swagger UI para testes autenticados
 
 ---
 

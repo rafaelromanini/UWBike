@@ -148,8 +148,12 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // DbContext com string de conexão
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseOracle(builder.Configuration.GetConnectionString("OracleConnection")));
+// Em ambiente de teste, o WebApplicationFactory substituirá isso por InMemory
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<AppDbContext>(options =>
+        options.UseOracle(builder.Configuration.GetConnectionString("OracleConnection")));
+}
 
 // Registrar repositories e services seguindo boas práticas (Scoped para trabalhar com DbContext)
 builder.Services.AddScoped<IMotoRepository, MotoRepository>();
@@ -280,3 +284,6 @@ public class ExampleSchemaFilter : Swashbuckle.AspNetCore.SwaggerGen.ISchemaFilt
         }
     }
 }
+
+// Torna a classe Program acessível para testes de integração
+public partial class Program { }
